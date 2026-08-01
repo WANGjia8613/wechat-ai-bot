@@ -111,6 +111,10 @@
 *.pem
 *.key
 
+# Wechaty runtime session
+*.memory-card.json
+**/*.memory-card.json
+
 # Temporary files
 *.tmp
 *.temp
