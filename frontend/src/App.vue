@@ -223,7 +223,7 @@ async function handleTestChat(text) {
 
 async function qrcodeDataUrl() {
   if (!status.qrcode) return '';
-  if (/^(data:|https?:)/.test(status.qrcode)) return status.qrcode;
+  if (/^data:/.test(status.qrcode)) return status.qrcode;
   return await QRCode.toDataURL(status.qrcode, { width: 280, margin: 2 });
 }
 
