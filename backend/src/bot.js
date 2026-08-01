@@ -37,7 +37,11 @@ export class BotManager extends EventEmitter {
   }
 
   async start(overrides = {}) {
-    this.cfg = { ...this.cfg, ...overrides };
+    const merged = { ...this.cfg };
+    for (const [key, value] of Object.entries(overrides)) {
+      if (value !== undefined) merged[key] = value;
+    }
+    this.cfg = merged;
     if (['running', 'starting', 'waiting-qrcode'].includes(this.status)) return this.getStatus();
     this.setStatus('starting');
     try {
