@@ -81,6 +81,8 @@ function handleWsMessage(msg) {
 
 function handleMessage(data) {
   const key = data.isRoom ? `room:${data.roomId}` : `person:${data.contactId}`;
+  const arr = messagesByContact[key] || [];
+  if (data.seq && arr.some((m) => m.seq === data.seq)) return;
   if (!messagesByContact[key]) messagesByContact[key] = [];
   messagesByContact[key].push(data);
   if (data.isRoom) {
@@ -190,21 +192,21 @@ async function stopBot() {
 async function handleSend(text) {
   if (!text.trim() || !selectedContact.value) return;
   const contact = selectedContact.value;
-  const key = `person:${contact.id}`;
-  if (!messagesByContact[key]) messagesByContact[key] = [];
-  messagesByContact[key].push({ type: 'out', text, displayName: contact.name, ts: Date.now(), self: true });
   if (status.mode === 'mock') {
     try {
       await api.mockInject({ contactName: contact.name, text });
     } catch (err) {
       addLog(`发送失败: ${err.message}`, 'error');
     }
-  } else {
-    try {
-      await api.send({ contactId: contact.id, text, isRoom: contact.type === 'room' });
-    } catch (err) {
-      addLog(`发送失败: ${err.message}`, 'error');
-    }
+    return;
+  }
+  const key = `person:${contact.id}`;
+  if (!messagesByContact[key]) messagesByContact[key] = [];
+  messagesByContact[key].push({ type: 'out', text, displayName: contact.name, ts: Date.now(), self: true });
+  try {
+    await api.send({ contactId: contact.id, text, isRoom: contact.type === 'room' });
+  } catch (err) {
+    addLog(`发送失败: ${err.message}`, 'error');
   }
 }
 

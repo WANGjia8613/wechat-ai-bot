@@ -128,7 +128,31 @@ export class BotManager extends EventEmitter {
   injectMockMessage(contactName, text) {
     const contact = this.contacts.find((c) => c.name === contactName) || this.contacts[0];
     if (!contact) throw new Error('没有可用的模拟联系人');
-    return this.handleIncoming(contact.id, contact.name, text, false, null);
+    if (!text || !text.trim()) return;
+    const key = `person:${contact.id}`;
+    const history = this.sessions.get(key) || [];
+    history.push({ role: 'user', content: text });
+    if (history.length > HISTORY_LIMIT) history.splice(0, history.length - HISTORY_LIMIT);
+    this.sessions.set(key, history);
+
+    this.emit('message', {
+      type: 'out', contactId: contact.id, displayName: contact.name, text, isRoom: false, roomId: null, ts: Date.now(),
+    });
+
+    if (!this.cfg.autoReply) return;
+    (async () => {
+      try {
+        const reply = await chat(history, this.cfg);
+        const final = this.cfg.replyPrefix ? `${this.cfg.replyPrefix}${reply}` : reply;
+        this.emit('message', {
+          type: 'in', contactId: contact.id, displayName: contact.name, text: final, isRoom: false, roomId: null, ts: Date.now(),
+        });
+        history.push({ role: 'assistant', content: final });
+        this.sessions.set(key, history);
+      } catch (err) {
+        this.emit('error', `回复 ${contact.name} 失败: ${err.message}`);
+      }
+    })();
   }
 
   startMock() {

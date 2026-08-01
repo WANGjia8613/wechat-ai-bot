@@ -50,7 +50,8 @@ function time(ts) {
     <div class="test-bar">
       <input v-model="testText" placeholder="AI 对话测试：不经过微信，直接向大模型提问" @keyup.enter="onTestChat" />
       <button class="btn primary" @click="onTestChat">测试</button>
-      <div v-if="testReply" class="test-reply">{{ testReply }}</div>    </div>
+      <div v-if="testReply" class="test-reply">{{ testReply }}</div>
+    </div>
 
     <div ref="listRef" class="messages">
       <div
@@ -63,7 +64,7 @@ function time(ts) {
         <div class="meta">{{ m.type === 'in' ? m.displayName : '我' }} · {{ time(m.ts) }}</div>
       </div>
       <div v-if="!messages.length" class="empty-hint">
-        <p v-if="mode === 'mock'">模拟模式：在下方输入消息，将模拟该联系人来信并触发 AI 自动回复</p>
+        <p v-if="mode === 'mock'">模拟模式：发送消息后，AI 会以该联系人的身份回复你</p>
         <p v-else>等待微信好友发送消息...</p>
       </div>
     </div>
