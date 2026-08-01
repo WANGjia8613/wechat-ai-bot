@@ -32,6 +32,7 @@ const selectedId = ref(null);
 const messagesByContact = reactive({});
 const logs = ref([]);
 const showQr = ref(false);
+const qrSrc = ref('');
 const loading = ref(false);
 
 const statusText = computed(() => {
@@ -222,10 +223,25 @@ async function handleTestChat(text) {
 }
 
 async function qrcodeDataUrl() {
-  if (!status.qrcode) return '';
-  if (/^data:/.test(status.qrcode)) return status.qrcode;
-  return await QRCode.toDataURL(status.qrcode, { width: 280, margin: 2 });
+  if (!status.qrcode) {
+    qrSrc.value = '';
+    return;
+  }
+  if (/^data:/.test(status.qrcode)) {
+    qrSrc.value = status.qrcode;
+    return;
+  }
+  try {
+    qrSrc.value = await QRCode.toDataURL(status.qrcode, { width: 280, margin: 2 });
+  } catch (_) {
+    qrSrc.value = '';
+  }
 }
+
+watch(
+  () => status.qrcode,
+  () => qrcodeDataUrl()
+);
 
 function selectContact(id) {
   selectedId.value = id;
@@ -278,7 +294,7 @@ onMounted(refresh);
       <div class="qr-card">
         <h3>微信扫码登录</h3>
         <p>请使用微信扫一扫完成登录</p>
-        <img v-if="status.qrcode" :src="qrcodeDataUrl" class="qr-img" />
+        <img v-if="status.qrcode" :src="qrSrc" class="qr-img" />
         <button class="btn" @click="showQr = false">关闭</button>
       </div>
     </div>
