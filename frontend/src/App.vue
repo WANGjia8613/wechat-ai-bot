@@ -1,5 +1,5 @@
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue';
+import { ref, reactive, computed, watch, onMounted } from 'vue';
 import { api } from './api/http.js';
 import { useWebSocket } from './composables/useWebSocket.js';
 import QRCode from 'qrcode';
@@ -65,18 +65,8 @@ function handleWsMessage(msg) {
     contacts.value = msg.data;
     if (!selectedId.value && msg.data.length) selectedId.value = msg.data[0].id;
   } else if (msg.type === 'message') {
-    const key = msg.data.isRoom ? `room:${msg.data.roomId}` : `person:${msg.data.contactId}`;
-    if (!messagesByContact[key]) messagesByContact[key] = [];
-    messagesByContact[key].push(msg.data);
-    if (msg.data.isRoom) {
-      const room = contacts.value.find((c) => c.id === msg.data.roomId);
-      if (room && selectedId.value !== room.id) {
-        room.unread = (room.unread || 0) + 1;
-      }
-    } else {
-      const c = contacts.value.find((x) => x.id === msg.data.contactId);
-      if (c && selectedId.value !== c.id) c.unread = (c.unread || 0) + 1;
-    }
+    if (msg.data.seq && msg.data.seq > msgCursor.value) msgCursor.value = msg.data.seq;
+    handleMessage(msg.data);
   } else if (msg.type === 'log') {
     addLog(msg.data);
   } else if (msg.type === 'error') {
@@ -84,7 +74,60 @@ function handleWsMessage(msg) {
   }
 }
 
+function handleMessage(data) {
+  const key = data.isRoom ? `room:${data.roomId}` : `person:${data.contactId}`;
+  if (!messagesByContact[key]) messagesByContact[key] = [];
+  messagesByContact[key].push(data);
+  if (data.isRoom) {
+    const room = contacts.value.find((c) => c.id === data.roomId);
+    if (room && selectedId.value !== room.id) {
+      room.unread = (room.unread || 0) + 1;
+    }
+  } else {
+    const c = contacts.value.find((x) => x.id === data.contactId);
+    if (c && selectedId.value !== c.id) c.unread = (c.unread || 0) + 1;
+  }
+}
+
+const msgCursor = ref(0);
+let pollTimer = null;
+
+async function pollMessages() {
+  try {
+    const res = await api.messages(msgCursor.value);
+    if (res.messages && res.messages.length) {
+      for (const m of res.messages) {
+        if (m.seq > msgCursor.value) msgCursor.value = m.seq;
+        handleMessage(m);
+      }
+    }
+  } catch (_) {
+    /* 轮询失败静默 */
+  }
+}
+
+function startPolling() {
+  if (pollTimer) return;
+  pollTimer = setInterval(pollMessages, 3000);
+  pollMessages();
+}
+
+function stopPolling() {
+  if (pollTimer) {
+    clearInterval(pollTimer);
+    pollTimer = null;
+  }
+}
+
 const { connected } = useWebSocket(handleWsMessage);
+watch(
+  connected,
+  (on) => {
+    if (on) stopPolling();
+    else startPolling();
+  },
+  { immediate: true }
+);
 
 async function refresh() {
   try {

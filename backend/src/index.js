@@ -36,7 +36,15 @@ for (const ev of ['status', 'qrcode', 'message', 'contacts', 'error', 'log']) {
 
 bot.on('error', (data) => console.error(`[bot-error] ${data}`));
 bot.on('log', (data) => console.log(`[bot-log] ${data}`));
-bot.on('message', (data) => console.log(`[bot-message] ${data.type} from=${data.displayName}: ${String(data.text).slice(0, 60)}`));
+
+let lastSeq = 0;
+const messageLog = [];
+bot.on('message', (data) => {
+  const item = { ...data, seq: ++lastSeq };
+  messageLog.push(item);
+  if (messageLog.length > 500) messageLog.splice(0, messageLog.length - 500);
+  console.log(`[bot-message] ${data.type} from=${data.displayName}: ${String(data.text).slice(0, 60)}`);
+});
 
 const publicConfig = () => ({
   wechatMode: config.wechatMode,
@@ -144,6 +152,11 @@ app.post('/api/bot/mock-inject', async (req, res) => {
 
 app.get('/api/contacts', (_req, res) => {
   res.json(bot.contacts);
+});
+
+app.get('/api/bot/messages', (req, res) => {
+  const after = Number(req.query.after) || 0;
+  res.json({ messages: messageLog.filter((m) => m.seq > after), cursor: lastSeq });
 });
 
 app.post('/api/chat', async (req, res) => {

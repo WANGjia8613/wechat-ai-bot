@@ -23,5 +23,6 @@ export const api = {
   send: (body) => request('/bot/send', { method: 'POST', body: JSON.stringify(body) }),
   mockInject: (body) => request('/bot/mock-inject', { method: 'POST', body: JSON.stringify(body) }),
   contacts: () => request('/contacts'),
+  messages: (after = 0) => request(`/bot/messages?after=${after}`),
   chat: (text) => request('/chat', { method: 'POST', body: JSON.stringify({ text }) }),
 };
