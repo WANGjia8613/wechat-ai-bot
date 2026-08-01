@@ -94,6 +94,13 @@ let pollTimer = null;
 
 async function pollMessages() {
   try {
+    if (!contacts.value.length) {
+      const cl = await api.contacts();
+      if (cl.length) {
+        contacts.value = cl;
+        if (!selectedId.value) selectedId.value = cl[0].id;
+      }
+    }
     const res = await api.messages(msgCursor.value);
     if (res.messages && res.messages.length) {
       for (const m of res.messages) {
@@ -149,6 +156,13 @@ async function startBot() {
     });
     Object.assign(status, res);
     addLog(`启动请求已发送，当前状态: ${statusText.value}`);
+    if (!contacts.value.length) {
+      const cl = await api.contacts();
+      if (cl.length) {
+        contacts.value = cl;
+        if (!selectedId.value) selectedId.value = cl[0].id;
+      }
+    }
   } catch (err) {
     addLog(`启动失败: ${err.message}`, 'error');
   } finally {
@@ -189,13 +203,14 @@ async function handleSend(text) {
   }
 }
 
+const testReply = ref('');
 async function handleTestChat(text) {
+  testReply.value = '思考中...';
   try {
     const res = await api.chat(text);
-    return res.reply;
+    testReply.value = res.reply;
   } catch (err) {
-    addLog(`AI 测试失败: ${err.message}`, 'error');
-    return `错误: ${err.message}`;
+    testReply.value = `错误: ${err.message}`;
   }
 }
 
@@ -239,6 +254,7 @@ onMounted(refresh);
         :contact="selectedContact"
         :messages="selectedMessages"
         :mode="status.mode"
+        :test-reply="testReply"
         @send="handleSend"
         @test-chat="handleTestChat"
       />

@@ -5,12 +5,12 @@ const props = defineProps({
   contact: { type: Object, default: null },
   messages: { type: Array, default: () => [] },
   mode: { type: String, default: 'mock' },
+  testReply: { type: String, default: '' },
 });
 const emit = defineEmits(['send', 'test-chat']);
 
 const inputText = ref('');
 const testText = ref('');
-const testReply = ref('');
 const listRef = ref(null);
 
 watch(
@@ -28,11 +28,10 @@ function onSend() {
   inputText.value = '';
 }
 
-async function onTestChat() {
+function onTestChat() {
   const text = testText.value.trim();
   if (!text) return;
-  testReply.value = '思考中...';
-  testReply.value = await emit('test-chat', text);
+  emit('test-chat', text);
   testText.value = '';
 }
 
@@ -51,8 +50,7 @@ function time(ts) {
     <div class="test-bar">
       <input v-model="testText" placeholder="AI 对话测试：不经过微信，直接向大模型提问" @keyup.enter="onTestChat" />
       <button class="btn primary" @click="onTestChat">测试</button>
-      <div v-if="testReply" class="test-reply">{{ testReply }}</div>
-    </div>
+      <div v-if="testReply" class="test-reply">{{ testReply }}</div>    </div>
 
     <div ref="listRef" class="messages">
       <div
