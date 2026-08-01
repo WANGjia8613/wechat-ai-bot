@@ -34,6 +34,10 @@ for (const ev of ['status', 'qrcode', 'message', 'contacts', 'error', 'log']) {
   bot.on(ev, (data) => broadcast(ev, data));
 }
 
+bot.on('error', (data) => console.error(`[bot-error] ${data}`));
+bot.on('log', (data) => console.log(`[bot-log] ${data}`));
+bot.on('message', (data) => console.log(`[bot-message] ${data.type} from=${data.displayName}: ${String(data.text).slice(0, 60)}`));
+
 const publicConfig = () => ({
   wechatMode: config.wechatMode,
   puppet: config.puppet,
