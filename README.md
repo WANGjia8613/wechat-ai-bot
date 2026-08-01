@@ -115,20 +115,29 @@ sudo tar -xzf wechat-ai-bot.tar.gz
 sudo chown -R $USER:$USER /opt/backend /opt/frontend
 ```
 
+> 方式 A（git clone）不需要 chown，clone 已属于当前用户。
+
 如果项目在 git 仓库，也可直接：
 
 ```bash
-cd /opt && git clone <你的仓库地址> wechat-ai-bot
+cd /opt && git clone https://github.com/WANGjia8613/wechat-ai-bot
 ```
+
+**注意两种方式目录不同**：
+
+- 方式 A（git clone）：代码在 `/opt/wechat-ai-bot/`，下文路径为 `/opt/wechat-ai-bot/backend`
+- 方式 B（tar 解压）：代码在 `/opt/` 根，下文路径为 `/opt/backend`
 
 ### 3. 安装依赖并构建
 
+以下按方式 A（git clone）示例；方式 B 把 `/opt/wechat-ai-bot` 换成 `/opt` 即可：
+
 ```bash
-cd /opt/backend
+cd /opt/wechat-ai-bot/backend
 npm install
 cp .env.example .env
 nano .env          # 填入 USER_LLM_API_KEY、WECHAT_MODE 等
-cd /opt/frontend
+cd /opt/wechat-ai-bot/frontend
 npm install
 npm run build      # 生成生产产物 dist/
 ```
@@ -137,7 +146,7 @@ npm run build      # 生成生产产物 dist/
 
 ```bash
 sudo npm install -g pm2
-cd /opt/backend
+cd /opt/wechat-ai-bot/backend
 pm2 start src/index.js --name wechat-ai-bot
 pm2 save
 pm2 startup       # 按提示执行输出的命令，开机自启
