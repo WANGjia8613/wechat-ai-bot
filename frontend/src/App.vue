@@ -46,7 +46,12 @@ const statusText = computed(() => {
 });
 
 const selectedContact = computed(() => contacts.value.find((c) => c.id === selectedId.value) || null);
-const selectedMessages = computed(() => messagesByContact[selectedId.value] || []);
+const selectedMessages = computed(() => {
+  const c = selectedContact.value;
+  if (!c) return [];
+  const key = c.type === 'room' ? `room:${c.id}` : `person:${c.id}`;
+  return messagesByContact[key] || [];
+});
 
 function addLog(text, level = 'info') {
   logs.value.push({ text, level, ts: new Date().toLocaleTimeString() });
